@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Content Opportunity Scoring for Search-Driven Content Review</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.7;
+    max-width: 900px;
+    margin: auto;
+    padding: 40px 24px;
+    color: #222;
+    background: #fafafa;
+}
+
+main {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+}
+
+h1 {
+    line-height: 1.2;
+}
+
+h2 {
+    margin-top: 45px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+}
+
+h3 {
+    margin-top: 30px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 1.15rem;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 25px 0;
+}
+
+.metric {
+    background: #f1f1f1;
+    padding: 18px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.metric strong {
+    display: block;
+    font-size: 1.4rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background: #f1f1f1;
+}
+
+.note {
+    background: #f5f5f5;
+    padding: 18px;
+    border-left: 4px solid #777;
+    margin: 20px 0;
+}
+
+li {
+    margin-bottom: 10px;
+}
+
+@media(max-width: 700px) {
+    .metric-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    main {
+        padding: 24px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<main>
+
+<h1>Content Opportunity Scoring for Search-Driven Content Review</h1>
+
+<p class="subtitle">
+A Decision-Support Approach Using Anonymized FlyRank Search Data
+</p>
+
+<h2>Abstract</h2>
+
+<p>
+This research asks whether observable search-performance signals can be used to prioritize pages for content review when review capacity is limited. The analysis uses anonymized FlyRank warehouse data and five historical features covering impressions, clicks, CTR, and search position. A Logistic Regression model was trained using the Week-4 baseline-defined opportunity label and evaluated using both a random stratified split and a client-grouped validation check. The model achieved an F1 score of 0.6141 under the random split and 0.6095 under client-grouped validation, with recall close to 1.0 in both checks. These results provide directional evidence that a learned scoring approach can approximate a rule-based content-opportunity policy, but they do not prove future recovery, causal refresh impact, or Google's ranking behavior.
+</p>
+
+<h2>Introduction / Problem Statement</h2>
+
+<p>
+Content teams can have more pages available for review than they can realistically inspect. The practical challenge is therefore to decide which pages deserve attention first.
+</p>
+
+<p>
+This capstone focuses on the <strong>Refresh / Content Opportunity Scoring</strong> lane. The objective is to build a repeatable workflow that uses observable historical search-performance signals to prioritize pages for content review.
+</p>
+
+<p>
+The Week-4 work provides a rule-based content-opportunity baseline. The Week-5 work then uses machine learning to learn the baseline-defined opportunity condition from historical performance features. A later client-grouped validation check is used to examine whether the observed performance remains similar when the model is evaluated on previously unseen clients.
+</p>
+
+<div class="note">
+<strong>Decision-support framing:</strong> The output is intended to help allocate limited content-review effort. It is not an automated content decision system.
+</div>
+
+<h2>Data</h2>
+
+<p>
+This capstone uses the anonymized FlyRank warehouse release:
+</p>
+
+<p><code>flyrank_pseudonymized_warehouse_release_v20260703</code></p>
+
+<ul>
+<li>Daily performance table: 78,835,655 rows</li>
+<li>Query table: 2,414,248 rows</li>
+<li>Content items: 519,606</li>
+<li>Date window: 2025-01-27 through 2026-06-30</li>
+</ul>
+
+<p>
+The analysis uses historical search-performance information and excludes inappropriate public-facing material such as client names, domains, private queries, credentials, and raw exports.
+</p>
+
+<h2>Methodology</h2>
+
+<h3>Baseline</h3>
+
+<p>
+The Week-4 baseline creates a content-opportunity score using observable historical search-performance signals such as search visibility, CTR, position, and recent performance.
+</p>
+
+<h3>Features</h3>
+
+<ul>
+<li><code>impressions_90d</code></li>
+<li><code>clicks_90d</code></li>
+<li><code>ctr</code></li>
+<li><code>avg_position_90d</code></li>
+<li><code>avg_position_last30</code></li>
+</ul>
+
+<h3>Label Definition</h3>
+
+<p>
+The target variable is <code>baseline_action</code>. A row receives a positive label when <code>baseline_score &gt; 0</code> and otherwise receives a negative label.
+</p>
+
+<p>
+Therefore, the Week-5 model learns to reproduce the opportunity definition created by the Week-4 baseline. It should not be interpreted as an independent prediction of future traffic recovery or refresh success.
+</p>
+
+<h3>Model</h3>
+
+<p>
+The Week-5 model uses Logistic Regression to combine the historical features and estimate the baseline-defined opportunity class.
+</p>
+
+<h3>Validation</h3>
+
+<p>
+The initial Week-5 evaluation used an 80/20 random stratified train/test split with <code>random_state=42</code>.
+</p>
+
+<p>
+A subsequent client-grouped validation check separated clients between training and testing to examine whether the observed result remained similar on previously unseen clients.
+</p>
+
+<h3>Leakage and Public-Safety Checks</h3>
+
+<p>
+The features are restricted to observable historical performance signals. The analysis does not use client names, domains, private queries, credentials, or future refresh outcomes as model features.
+</p>
+
+<p>
+Because the target is derived from the Week-4 baseline rule, the model is interpreted as learning the baseline opportunity policy rather than predicting an independently observed future outcome.
+</p>
+
+<h2>Results</h2>
+
+<div class="metric-grid">
+<div class="metric"><strong>95.28%</strong>Random-split accuracy</div>
+<div class="metric"><strong>61.41%</strong>Random-split F1</div>
+<div class="metric"><strong>95.22%</strong>Grouped accuracy</div>
+<div class="metric"><strong>60.95%</strong>Grouped F1</div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Validation</th>
+<th>Accuracy</th>
+<th>Precision</th>
+<th>Recall</th>
+<th>F1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>W05 Random Stratified</td>
+<td>0.952803</td>
+<td>0.443195</td>
+<td>0.999504</td>
+<td>0.614092</td>
+</tr>
+<tr>
+<td>Client Grouped</td>
+<td>0.952212</td>
+<td>0.438364</td>
+<td>0.999571</td>
+<td>0.609452</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Interpretation</h3>
+
+<p>
+The initial W05 random stratified validation produced an F1 score of 0.6141. The client-grouped validation produced an F1 score of 0.6095.
+</p>
+
+<p>
+The difference between the two F1 scores is small, and accuracy also remained very similar. Recall remained extremely high in both validation designs, while precision was substantially lower.
+</p>
+
+<p>
+This suggests that the model captures nearly all examples belonging to the baseline-defined positive class, while also producing a meaningful number of predictions that do not match the baseline label.
+</p>
+
+<p>
+These metrics measure performance against the baseline-derived label. They do not demonstrate future traffic recovery, refresh impact, or Google's ranking algorithm.
+</p>
+
+<h3>Error Analysis</h3>
+
+<p>
+Under the W05 random split, the main model disagreement was false positives: 22,780 rows were predicted as opportunities but were not marked as opportunities by the W04 baseline rule.
+</p>
+
+<p>
+These should be interpreted as disagreements with the baseline policy rather than proof that the pages are genuinely poor-performing.
+</p>
+
+<h2>Limitations &amp; Honest Framing</h2>
+
+<ol>
+<li><strong>Baseline-derived target:</strong> The Week-5 model learns the W04 opportunity definition rather than an independently observed future outcome.</li>
+<li><strong>Observational analysis:</strong> The results describe relationships and model performance within the available data and do not establish causal effects.</li>
+<li><strong>Precision:</strong> High recall is accompanied by lower precision, so some candidates will not match the baseline-defined positive class.</li>
+<li><strong>Validation:</strong> Random and client-grouped validation do not guarantee performance on every future client or future time period.</li>
+<li><strong>Limited features:</strong> The model uses a small set of historical search-performance signals.</li>
+<li><strong>Human review:</strong> A high-scoring page should be treated as a candidate for review, not an automatic refresh decision.</li>
+<li><strong>No Google-algorithm claim:</strong> This research does not attempt to identify Google's internal ranking factors.</li>
+</ol>
+
+<div class="note">
+<strong>Strongest supported conclusion:</strong> The learned model provides a repeatable way to approximate the Week-4 content-opportunity policy using observable historical signals, with broadly similar measured performance under a client-grouped validation check.
+</div>
+
+<h2>Ranked Recommendations</h2>
+
+<h3>Priority 1 — Model Decline Risk</h3>
+<p><strong>Action:</strong> Review pages receiving a strong model opportunity signal.</p>
+<p><strong>Review:</strong> Recent performance, search intent alignment, content freshness, and usefulness.</p>
+
+<h3>Priority 2 — Visible Model Opportunity</h3>
+<p><strong>Action:</strong> Review pages with meaningful search visibility that also receive an opportunity signal.</p>
+<p><strong>Review:</strong> Content quality, relevance, structure, and usefulness.</p>
+
+<h3>Priority 3 — CTR Review Candidate</h3>
+<p><strong>Action:</strong> Review pages with meaningful impressions but relatively weak CTR.</p>
+<p><strong>Review:</strong> Title, description, search-intent alignment, and value communication.</p>
+
+<h3>Priority 4 — Engagement Review Candidate</h3>
+<p><strong>Action:</strong> Review pages with meaningful sessions but weaker engagement signals.</p>
+<p><strong>Review:</strong> Content structure, readability, relevance, and user intent satisfaction.</p>
+
+<h3>Recommended Workflow</h3>
+
+<ol>
+<li>Generate opportunity scores.</li>
+<li>Rank candidate pages by score.</li>
+<li>Assign a reason code.</li>
+<li>Apply the corresponding review action.</li>
+<li>Have a human reviewer inspect the page.</li>
+<li>Monitor subsequent performance rather than assuming improvement.</li>
+</ol>
+
+<h2>Reproducibility</h2>
+
+<p>
+This capstone builds on the analysis completed during the FlyRank ML Internship.
+</p>
+
+<ul>
+<li><strong>W04:</strong> Rule-based content opportunity baseline</li>
+<li><strong>W05:</strong> Machine-learning model for the baseline-defined opportunity label</li>
+<li><strong>ML-09:</strong> Validation and research-claim audit</li>
+<li><strong>Capstone:</strong> Final research synthesis, results, limitations, and recommendations</li>
+</ul>
+
+<p>
+The repository contains the notebooks used during the analysis and the final capstone notebook. Public outputs intentionally exclude client names, domains, private queries, credentials, and raw data exports.
+</p>
+
+<h2>Acknowledgments &amp; Data Credit</h2>
+
+<p>
+Built on the FlyRank ML Internship dataset.
+</p>
+
+<p>
+Data source: <a href="https://flyrank.ai">FlyRank</a>
+</p>
+
+<p>
+This work was completed as part of the FlyRank ML Internship.
+</p>
+
+</main>
+
+</body>
+</html>
